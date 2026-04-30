@@ -8,51 +8,63 @@ Stable tag: 16.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Removes the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
+Detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your rendered HTML.
 
 == Description ==
 
-When this plugin first shipped in 2009, the WordPress.com Stats plugin (now Jetpack Stats) emitted a visible smiley face character in the footer of every page. This plugin's original job was to remove that smiley.
+I shipped the first version of this plugin in 2009 to hide a visible smiley character that WordPress.com Stats injected into the footer of every page. Automattic retired the smiley around 2012, so the original CSS-hiding trick stopped being useful a long time ago.
 
-Automattic retired the smiley over a decade ago, but Jetpack Stats still injects a footer tracking pixel — both as a `<noscript>` image and through the modern `Tracking_Pixel` class introduced in Jetpack 11.5. This plugin now removes that pixel instead, preserving the spirit of the original: stats can run server-side without injecting a marker into your rendered HTML.
+Jetpack Stats today still injects a tracking pixel into your footer — both as a `<noscript>` image through the legacy `stats_footer` callback, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` introduced in Jetpack 11.5. Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats: detach the footer artifact and leave the rest of your site alone.
+
+The slug and name are kept for continuity with the original wp.org listing. If that's confusing, the FAQ below addresses it directly.
 
 What it does:
 
-* Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats / Jetpack).
-* Detaches the modern `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` callback (Jetpack 11.5+).
-* Does nothing when Jetpack Stats is not active — safe to leave installed regardless.
+* Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats and pre-11.5 Jetpack).
+* Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5 and later).
+* Safe no-op when Jetpack Stats is not installed or active.
 
-Single-file plugin. No settings, no admin UI, no enqueued assets, no third-party services.
+Small, single-purpose plugin. No settings page, no admin chrome, no tracking. Activate it and it works. Deactivate it and it leaves no trace.
+
+Originally published 2009, rewritten 2026 for current WordPress and current Jetpack Stats.
+
+= About the author =
+
+Built and maintained by Christopher Ross — 25 years working with WordPress, currently running a senior-dev consulting practice at This Is My URL. More plugins, writing, and case studies at [thisismyurl.com](https://thisismyurl.com/).
 
 == Installation ==
 
 1. Install through the WordPress plugin directory or upload the plugin folder to `/wp-content/plugins/`.
 2. Activate it from the **Plugins** menu in WordPress admin.
-3. If Jetpack Stats is active, the tracking pixel is detached automatically.
+3. If Jetpack Stats is active, the footer tracking pixel is detached automatically. If it isn't, the plugin does nothing.
 
 == Frequently Asked Questions ==
 
 = Will this break my Jetpack Stats reporting? =
 
-In most modern Jetpack configurations, no — view tracking happens server-side or through the Jetpack site connection. The footer pixel is a fallback. If you see a drop in reported pageviews after activating this plugin, you may rely on the pixel-based path, in which case you can deactivate it.
+In most modern Jetpack configurations, no. View tracking happens server-side or through the Jetpack site connection, and the footer pixel is a fallback path. If you watch your stats for a week after activating and see a real drop in reported pageviews, your install is leaning on the pixel — deactivate the plugin and you're back to where you started. No data is lost either way.
 
-= Does this work without Jetpack Stats installed? =
+= Why is the plugin still called "Smiley Remover" if the smiley is gone? =
 
-Yes — the plugin detects the absence of Jetpack and is a safe no-op. You can leave it installed even on sites that don't use Jetpack.
+Because the slug and listing have lived at this URL since 2009 and changing them would break installs and break inbound links from old blog posts and Stack Overflow answers. The honest answer is that the plugin's job today is the lineal descendant of the original — it removes a footer artifact that the WP.com Stats / Jetpack Stats lineage has been injecting in one form or another for fifteen-plus years. The artifact changed. The intent didn't.
 
-= Why is this plugin still called "Smiley Remover" if the smiley is gone? =
+= Does this work without Jetpack installed? =
 
-The slug and name were preserved for continuity with the original wp.org listing and existing installs. The plugin's modern job is the lineal descendant of the original: removing footer artifacts that Jetpack Stats injects into your output.
+Yes. The plugin checks for the modern `Tracking_Pixel` class before touching it, and `remove_action()` is a safe no-op when the legacy callback isn't registered. You can leave it installed on sites that don't run Jetpack at all.
+
+= Why not just turn off Jetpack Stats? =
+
+If you don't want any of Jetpack Stats, that's the cleaner answer. This plugin is for sites that want the server-side reporting Jetpack Stats provides without the footer pixel sitting in their rendered HTML. Two different use cases.
 
 == Changelog ==
 
 = 16.0.0 =
 * Full rewrite from scratch for 2026.
-* Now removes the modern Jetpack Stats footer tracking pixel (the smiley itself was retired by Automattic over a decade ago).
+* Now detaches the modern Jetpack Stats footer tracking pixel — both the legacy `stats_footer` callback and `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5+).
+* Removed the CSS-hiding approach used in earlier versions. The smiley it targeted was retired by Automattic over a decade ago, so the rule no longer applies to anything.
 * Modern PHP (`declare(strict_types=1)`, namespaces, `Requires PHP: 7.4`).
 * Removed the bundled "common framework," donate prompt, and admin settings page.
-* Removed the CSS-injection approach used in earlier versions — modern Jetpack does not emit a visible smiley, so the CSS rule is no longer relevant.
-* Single-file plugin, WPCS-clean.
+* Single-file plugin, WPCS-clean, no enqueued assets.
 
 = 14.12.01 =
 * Added language file support, German and French Canadian translations.
@@ -70,4 +82,4 @@ The slug and name were preserved for continuity with the original wp.org listing
 == Upgrade Notice ==
 
 = 16.0.0 =
-Full rewrite. The plugin now removes the modern Jetpack Stats footer tracking pixel rather than the long-retired smiley character. No settings or admin UI. Safe to leave installed even if Jetpack Stats is not active.
+Full rewrite. The plugin now detaches the Jetpack Stats footer tracking pixel in PHP instead of hiding the long-retired smiley character with CSS. Same intent, current target. No settings or admin UI. Safe to leave installed even when Jetpack Stats is not active.

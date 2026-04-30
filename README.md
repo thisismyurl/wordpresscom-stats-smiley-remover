@@ -1,6 +1,6 @@
 # WordPress.com Stats Smiley Remover
 
-Single-file WordPress plugin that removes the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
+Single-file WordPress plugin that detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your rendered HTML.
 
 [![WordPress.org](https://img.shields.io/wordpress/plugin/installs/wordpresscom-stats-smiley-remover.svg)](https://wordpress.org/plugins/wordpresscom-stats-smiley-remover/)
 [![Rating](https://img.shields.io/wordpress/plugin/r/wordpresscom-stats-smiley-remover.svg)](https://wordpress.org/plugins/wordpresscom-stats-smiley-remover/#reviews)
@@ -10,16 +10,21 @@ Single-file WordPress plugin that removes the WordPress.com Stats / Jetpack Stat
 
 ## Why the name?
 
-When this plugin first shipped in 2009, the WordPress.com Stats plugin emitted a visible **smiley character** in the footer of every page. The plugin removed it with a CSS rule. Automattic retired the smiley over a decade ago, but Jetpack Stats still injects a footer tracking pixel — both as a `<noscript>` image and through the modern `Tracking_Pixel` class introduced in Jetpack 11.5.
+I shipped this plugin in 2009 to hide a visible smiley character that the WordPress.com Stats plugin injected into the footer of every page. The original used a CSS rule. Automattic retired the smiley around 2012, so that rule stopped doing anything useful a long time ago.
 
-The plugin's modern job is the lineal descendant of the original: removing footer artifacts that Jetpack Stats injects into your HTML output. The slug and name are preserved for continuity with the original wp.org listing and existing installs.
+Jetpack Stats today still injects a footer tracking pixel — as a `<noscript>` image through the legacy `stats_footer` callback, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` since Jetpack 11.5. Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats.
+
+The slug and listing name are preserved for continuity with the original wp.org page and the inbound links it has accumulated since 2009.
 
 ## What it does
 
-- Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats and Jetpack releases).
-- Detaches the modern `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` callback (Jetpack 11.5+).
+- Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats and pre-11.5 Jetpack).
+- Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5 and later).
 - Safe no-op when Jetpack Stats is not installed or active.
-- Single file. No settings, no admin UI, no enqueued assets, no third-party services.
+
+Small, single-purpose plugin. No settings page, no admin chrome, no tracking. Activate it and it works. Deactivate it and it leaves no trace.
+
+Originally published 2009, rewritten 2026 for current WordPress and current Jetpack Stats.
 
 ## Requirements
 
@@ -35,28 +40,24 @@ The plugin's modern job is the lineal descendant of the original: removing foote
 
 ## How it works
 
-```php
-// In wordpresscom-stats-smiley-remover.php
-add_action( 'wp_loaded', __NAMESPACE__ . '\\detach_pixel', PHP_INT_MAX );
+The whole plugin is one function. Both removals run once on `wp_loaded` at `PHP_INT_MAX` so any Jetpack code that registers the hooks has finished by then:
 
+```php
 function detach_pixel(): void {
     remove_action( 'wp_footer', 'stats_footer', 101 );
 
-    if ( class_exists( 'Automattic\\Jetpack\\Stats\\Tracking_Pixel' ) ) {
-        remove_action(
-            'wp_footer',
-            [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_to_footer' ],
-            101
-        );
+    $modern_callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_to_footer' ];
+    if ( class_exists( $modern_callback[0] ) ) {
+        remove_action( 'wp_footer', $modern_callback, 101 );
     }
 }
 ```
 
-`remove_action()` fails silently when the hook callback isn't registered, so we don't gate on `function_exists()` for the legacy path — we just call the removals once.
+`remove_action()` returns silently when the hook callback isn't registered, so the legacy path doesn't need a `function_exists()` guard. The modern path is class-gated because referencing a non-autoloaded class as a string array is fine, but I'd rather not call `remove_action()` for a callback that provably can't exist.
 
 ## Will this break my Jetpack Stats reporting?
 
-In most modern Jetpack configurations, no — view tracking happens server-side or through the Jetpack site connection. The footer pixel is a fallback. If you see a drop in reported pageviews after activating this plugin, you likely rely on the pixel-based path; in that case, deactivate the plugin.
+In most modern Jetpack configurations, no — view tracking happens server-side or through the Jetpack site connection. The footer pixel is a fallback. If you see a real drop in reported pageviews after activating, your install leans on the pixel path; deactivate and you're back to baseline.
 
 ## Development
 
@@ -64,6 +65,8 @@ In most modern Jetpack configurations, no — view tracking happens server-side 
 composer install
 composer run lint:phpcs
 ```
+
+The plugin is WPCS-clean and runs `declare(strict_types=1)` throughout.
 
 ## Changelog
 
