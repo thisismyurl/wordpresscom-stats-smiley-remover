@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WordPress.com Stats Smiley Remover
  * Plugin URI:        https://thisismyurl.com/plugins/wordpresscom-stats-smiley-remover/
- * Description:       Removes the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
+ * Description:       Detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
  * Version:           16.0.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
@@ -28,36 +28,56 @@ const VERSION = '16.0.0';
  *
  * The original 2009 plugin removed a visible smiley character that
  * WordPress.com Stats injected into the site footer. That smiley was
- * retired by Automattic over a decade ago, but the modern Jetpack Stats
- * module still emits a tracking pixel via `wp_footer` — both as a
- * `<noscript>` image and through the `Tracking_Pixel` class in newer
- * Jetpack releases.
+ * retired by Automattic over a decade ago, but Jetpack Stats still emits
+ * a tracking pixel via `wp_footer` on AMP requests through the modern
+ * `Tracking_Pixel::add_amp_pixel` callback (Jetpack 11.5+), and the
+ * legacy `stats_footer` global function still runs on pre-11.5 stacks.
  *
- * This plugin detaches both surfaces so stats can run server-side
- * without injecting a pixel into rendered markup. If Jetpack Stats is
- * not present, every call here is a safe no-op.
+ * This plugin detaches both surfaces. Modern non-AMP Jetpack tracks via
+ * a JavaScript file enqueued through `wp_enqueue_scripts` — that path is
+ * intentionally untouched, so stats reporting continues to work on
+ * non-AMP pages. If Jetpack Stats is not present, every removal here is
+ * a safe no-op.
  */
 function bootstrap(): void {
-	add_action( 'wp_loaded', __NAMESPACE__ . '\\detach_pixel', PHP_INT_MAX );
+	/*
+	 * Modern Jetpack registers its `wp_footer` callback from inside
+	 * `Main::template_redirect()`, which itself runs at `template_redirect`
+	 * priority 1. Hooking our removal on `template_redirect` at PHP_INT_MAX
+	 * guarantees we run after Jetpack has registered its hook, so
+	 * `remove_action()` matches and succeeds.
+	 *
+	 * The same callback also runs before `wp_footer` fires, so the pixel
+	 * never reaches the rendered page.
+	 */
+	add_action( 'template_redirect', __NAMESPACE__ . '\\detach_pixel', PHP_INT_MAX );
 }
 
 /**
  * Removes every known stats-pixel hook callback.
  *
  * `remove_action()` fails silently when the hook or callback isn't
- * registered, so we don't gate on `function_exists()` — we just call
- * the removals once. Order:
+ * registered, so we don't gate on `function_exists()` for the legacy
+ * path — we just call the removal once. The modern path is class-gated
+ * because constructing the callable array is wasted work when Jetpack
+ * isn't loaded.
  *
- *  1. Legacy WP.com Stats / older Jetpack — `stats_footer` global function.
- *  2. Modern Jetpack Stats (≥ 11.5) — `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer`.
+ *  1. Legacy WP.com Stats / pre-Jetpack-11.5 — `stats_footer` global function.
+ *  2. Modern Jetpack Stats (≥ 11.5) — `Tracking_Pixel::add_amp_pixel` on
+ *     `wp_footer` and on `web_stories_print_analytics`, both at
+ *     priority 101.
  */
 function detach_pixel(): void {
 	remove_action( 'wp_footer', 'stats_footer', 101 );
 
-	$modern_callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_to_footer' ];
-	if ( class_exists( $modern_callback[0] ) ) {
-		remove_action( 'wp_footer', $modern_callback, 101 );
+	if ( ! class_exists( 'Automattic\\Jetpack\\Stats\\Tracking_Pixel' ) ) {
+		return;
 	}
+
+	$callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_amp_pixel' ];
+
+	remove_action( 'wp_footer', $callback, 101 );
+	remove_action( 'web_stories_print_analytics', $callback, 101 );
 }
 
 bootstrap();

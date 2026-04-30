@@ -2,7 +2,7 @@
 Contributors: thisismyurl
 Tags: jetpack, stats, tracking, pixel, privacy
 Requires at least: 6.4
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 16.0.0
 License: GPL-2.0-or-later
@@ -14,14 +14,15 @@ Detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your
 
 I shipped the first version of this plugin in 2009 to hide a visible smiley character that WordPress.com Stats injected into the footer of every page. Automattic retired the smiley around 2012, so the original CSS-hiding trick stopped being useful a long time ago.
 
-Jetpack Stats today still injects a tracking pixel into your footer — both as a `<noscript>` image through the legacy `stats_footer` callback, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` introduced in Jetpack 11.5. Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats: detach the footer artifact and leave the rest of your site alone.
+Jetpack Stats today still injects a tracking pixel into your footer — through the legacy `stats_footer` global function on pre-11.5 stacks, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` on Jetpack 11.5+ (AMP and Web Stories renders). Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats: detach the footer artifact and leave the rest of your site alone.
 
 The slug and name are kept for continuity with the original wp.org listing. If that's confusing, the FAQ below addresses it directly.
 
 What it does:
 
-* Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats and pre-11.5 Jetpack).
-* Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5 and later).
+* Detaches the legacy `stats_footer` callback from `wp_footer` (pre-11.5 Jetpack and WP.com Stats).
+* Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` from `wp_footer` and `web_stories_print_analytics` (Jetpack 11.5 and later).
+* Leaves the JavaScript stats script alone — modern non-AMP tracking continues to work.
 * Safe no-op when Jetpack Stats is not installed or active.
 
 Small, single-purpose plugin. No settings page, no admin chrome, no tracking. Activate it and it works. Deactivate it and it leaves no trace.
@@ -42,7 +43,7 @@ Built and maintained by Christopher Ross — 25 years working with WordPress, cu
 
 = Will this break my Jetpack Stats reporting? =
 
-In most modern Jetpack configurations, no. View tracking happens server-side or through the Jetpack site connection, and the footer pixel is a fallback path. If you watch your stats for a week after activating and see a real drop in reported pageviews, your install is leaning on the pixel — deactivate the plugin and you're back to where you started. No data is lost either way.
+On non-AMP pages, no. Modern Jetpack tracks via a JavaScript file enqueued through `wp_enqueue_scripts`, and this plugin doesn't touch that path. On AMP-rendered pages and Web Stories, the footer pixel is the only tracking surface, so detaching it does mean those views stop being counted. If your traffic is mostly AMP, deactivate the plugin or scope it conditionally.
 
 = Why is the plugin still called "Smiley Remover" if the smiley is gone? =
 
@@ -60,7 +61,7 @@ If you don't want any of Jetpack Stats, that's the cleaner answer. This plugin i
 
 = 16.0.0 =
 * Full rewrite from scratch for 2026.
-* Now detaches the modern Jetpack Stats footer tracking pixel — both the legacy `stats_footer` callback and `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5+).
+* Now detaches the modern Jetpack Stats footer tracking pixel — the legacy `stats_footer` callback and `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` (Jetpack 11.5+, AMP and Web Stories paths).
 * Removed the CSS-hiding approach used in earlier versions. The smiley it targeted was retired by Automattic over a decade ago, so the rule no longer applies to anything.
 * Modern PHP (`declare(strict_types=1)`, namespaces, `Requires PHP: 7.4`).
 * Removed the bundled "common framework," donate prompt, and admin settings page.

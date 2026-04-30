@@ -12,14 +12,15 @@ Single-file WordPress plugin that detaches the WordPress.com Stats / Jetpack Sta
 
 I shipped this plugin in 2009 to hide a visible smiley character that the WordPress.com Stats plugin injected into the footer of every page. The original used a CSS rule. Automattic retired the smiley around 2012, so that rule stopped doing anything useful a long time ago.
 
-Jetpack Stats today still injects a footer tracking pixel — as a `<noscript>` image through the legacy `stats_footer` callback, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` since Jetpack 11.5. Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats.
+Jetpack Stats today still injects a footer tracking pixel — through the legacy `stats_footer` global function on pre-11.5 stacks, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` on Jetpack 11.5+ for AMP and Web Stories renders. Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats.
 
 The slug and listing name are preserved for continuity with the original wp.org page and the inbound links it has accumulated since 2009.
 
 ## What it does
 
-- Detaches the legacy `stats_footer` callback from `wp_footer` (older WP.com Stats and pre-11.5 Jetpack).
-- Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer` (Jetpack 11.5 and later).
+- Detaches the legacy `stats_footer` callback from `wp_footer` (pre-11.5 Jetpack and WP.com Stats classic).
+- Detaches `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` from `wp_footer` and `web_stories_print_analytics` (Jetpack 11.5+).
+- Leaves the JavaScript stats script alone — modern non-AMP tracking continues to work.
 - Safe no-op when Jetpack Stats is not installed or active.
 
 Small, single-purpose plugin. No settings page, no admin chrome, no tracking. Activate it and it works. Deactivate it and it leaves no trace.
@@ -40,24 +41,32 @@ Originally published 2009, rewritten 2026 for current WordPress and current Jetp
 
 ## How it works
 
-The whole plugin is one function. Both removals run once on `wp_loaded` at `PHP_INT_MAX` so any Jetpack code that registers the hooks has finished by then:
+Modern Jetpack registers its `wp_footer` callback from inside `Automattic\Jetpack\Stats\Main::template_redirect()`, which itself runs at `template_redirect` priority 1. So the only safe place to remove that hook is **after** Jetpack's `template_redirect` callback has fired — hooking on `wp_loaded` (or any earlier action) runs too soon and the removal silently no-ops.
 
 ```php
+function bootstrap(): void {
+    add_action( 'template_redirect', __NAMESPACE__ . '\\detach_pixel', PHP_INT_MAX );
+}
+
 function detach_pixel(): void {
     remove_action( 'wp_footer', 'stats_footer', 101 );
 
-    $modern_callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_to_footer' ];
-    if ( class_exists( $modern_callback[0] ) ) {
-        remove_action( 'wp_footer', $modern_callback, 101 );
+    if ( ! class_exists( 'Automattic\\Jetpack\\Stats\\Tracking_Pixel' ) ) {
+        return;
     }
+
+    $callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_amp_pixel' ];
+
+    remove_action( 'wp_footer', $callback, 101 );
+    remove_action( 'web_stories_print_analytics', $callback, 101 );
 }
 ```
 
-`remove_action()` returns silently when the hook callback isn't registered, so the legacy path doesn't need a `function_exists()` guard. The modern path is class-gated because referencing a non-autoloaded class as a string array is fine, but I'd rather not call `remove_action()` for a callback that provably can't exist.
+`remove_action()` returns silently when the hook callback isn't registered, so the legacy path doesn't need a `function_exists()` guard. The modern path is class-gated to skip the array construction when Jetpack isn't loaded — small thing, but the difference between "lazy senior code" and "lazy junior code" lives in details like that.
 
 ## Will this break my Jetpack Stats reporting?
 
-In most modern Jetpack configurations, no — view tracking happens server-side or through the Jetpack site connection. The footer pixel is a fallback. If you see a real drop in reported pageviews after activating, your install leans on the pixel path; deactivate and you're back to baseline.
+On non-AMP pages, no. Modern Jetpack tracks via a JavaScript file enqueued through `wp_enqueue_scripts`, and this plugin doesn't touch that path. On AMP-rendered pages and Web Stories, the footer pixel is the only tracking surface — detaching it does mean those views stop being counted. If your traffic is mostly AMP, deactivate the plugin or scope it to non-AMP requests.
 
 ## Development
 
