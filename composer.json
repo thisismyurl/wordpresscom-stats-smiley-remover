@@ -1,0 +1,32 @@
+{
+    "name": "thisismyurl/wordpresscom-stats-smiley-remover",
+    "description": "Removes the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Christopher Ross",
+            "email": "info@thisismyurl.com",
+            "homepage": "https://thisismyurl.com/"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "composer/installers": "^2.0"
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^3.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+    },
+    "scripts": {
+        "lint:phpcs": "phpcs --standard=phpcs.xml.dist",
+        "fix:phpcs": "phpcbf --standard=phpcs.xml.dist"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress.com Stats Smiley Remover">
+	<description>WordPress Coding Standards for the WordPress.com Stats Smiley Remover plugin.</description>
+
+	<file>.</file>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
+
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+	<rule ref="PHPCompatibilityWP"/>
+
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_supported_wp_version" value="6.4"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="wordpresscom-stats-smiley-remover"/>
+			</property>
+		</properties>
+	</rule>
+</ruleset>

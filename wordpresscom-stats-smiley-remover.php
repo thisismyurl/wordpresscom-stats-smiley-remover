@@ -1,64 +1,63 @@
 <?php
-/*
-Plugin Name: WordPress.com Stats Smiley Remover
-Plugin URI: http://thisismyurl.com/downloads/wordpress-com-stats-smiley-remover/
-Description: The WordPress.com Stats Smiley Remover quickly removes the smiley face placed in the footer of your site by the WordPress.com Stats plugin.
-Author: Christopher Ross
-Author URI: http://thisismyurl.com/
-Version: 15.01
-*/
-
 /**
+ * Plugin Name:       WordPress.com Stats Smiley Remover
+ * Plugin URI:        https://thisismyurl.com/plugins/wordpresscom-stats-smiley-remover/
+ * Description:       Removes the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
+ * Version:           16.0.0
+ * Requires at least: 6.4
+ * Requires PHP:      7.4
+ * Author:            Christopher Ross
+ * Author URI:        https://thisismyurl.com/
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       wordpresscom-stats-smiley-remover
  *
- * WordPress.com Stats Smiley Remover core file
- *
- * This file contains all the logic required for the plugin
- *
- * @link		http://wordpress.org/extend/plugins/wordpresscom-stats-smiley-remover/
- *
- * @package 	WordPress.com Stats Smiley Remover
- * @copyright	Copyright (c) 2008, Chrsitopher Ross
- * @license		http://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, v2 (or newer)
- *
- * @since 		WordPress.com Stats Smiley Remover 1.0
- *
- *
+ * @package ThisIsMyURL\WPSmileyRemover
  */
 
-/* if the plugin is called directly, die */
-if ( ! defined( 'WPINC' ) )
-	die;
-	
-	
-define( 'THISISMYURL_WPSF_NAME', 'WordPress.com Stats Smiley Remover' );
-define( 'THISISMYURL_WPSF_SHORTNAME', 'WP Smiley' );
+declare( strict_types = 1 );
 
-define( 'THISISMYURL_WPSF_FILENAME', plugin_basename( __FILE__ ) );
-define( 'THISISMYURL_WPSF_FILEPATH', dirname( plugin_basename( __FILE__ ) ) );
-define( 'THISISMYURL_WPSF_FILEPATHURL', plugin_dir_url( __FILE__ ) );
+namespace ThisIsMyURL\WPSmileyRemover;
 
-define( 'THISISMYURL_WPSF_NAMESPACE', basename( THISISMYURL_WPSF_FILENAME, '.php' ) );
-define( 'THISISMYURL_WPSF_TEXTDOMAIN', str_replace( '-', '_', THISISMYURL_WPSF_NAMESPACE ) );
+defined( 'ABSPATH' ) || exit;
 
-define( 'THISISMYURL_WPSF_VERSION', '15.01' );
-
-include_once( 'thisismyurl-common.php' );
-
-
+const VERSION = '16.0.0';
 
 /**
- * Creates the class required for WordPress.com Stats Smiley Remover
+ * Detach the WordPress.com Stats / Jetpack Stats footer pixel.
  *
- * @author     Christopher Ross <info@thisismyurl.com>
- * @version    Release: @15.01@
- * @see        wp_enqueue_scripts()
- * @since      Class available since Release 14.11
+ * The original 2009 plugin removed a visible smiley character that
+ * WordPress.com Stats injected into the site footer. That smiley was
+ * retired by Automattic over a decade ago, but the modern Jetpack Stats
+ * module still emits a tracking pixel via `wp_footer` — both as a
+ * `<noscript>` image and through the `Tracking_Pixel` class in newer
+ * Jetpack releases.
  *
+ * This plugin detaches both surfaces so stats can run server-side
+ * without injecting a pixel into rendered markup. If Jetpack Stats is
+ * not present, every call here is a safe no-op.
  */
-if( ! class_exists( 'thissimyurl_WPSmileyRemover' ) ) {
-class thissimyurl_WPSmileyRemover extends thisismyurl_Common_WPSF {
-
-}
+function bootstrap(): void {
+	add_action( 'wp_loaded', __NAMESPACE__ . '\\detach_pixel', PHP_INT_MAX );
 }
 
-$thissimyurl_WPSmileyRemover = new thissimyurl_WPSmileyRemover;
+/**
+ * Removes every known stats-pixel hook callback.
+ *
+ * `remove_action()` fails silently when the hook or callback isn't
+ * registered, so we don't gate on `function_exists()` — we just call
+ * the removals once. Order:
+ *
+ *  1. Legacy WP.com Stats / older Jetpack — `stats_footer` global function.
+ *  2. Modern Jetpack Stats (≥ 11.5) — `Automattic\Jetpack\Stats\Tracking_Pixel::add_to_footer`.
+ */
+function detach_pixel(): void {
+	remove_action( 'wp_footer', 'stats_footer', 101 );
+
+	$modern_callback = [ 'Automattic\\Jetpack\\Stats\\Tracking_Pixel', 'add_to_footer' ];
+	if ( class_exists( $modern_callback[0] ) ) {
+		remove_action( 'wp_footer', $modern_callback, 101 );
+	}
+}
+
+bootstrap();

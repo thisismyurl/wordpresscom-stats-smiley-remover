@@ -1,0 +1,7 @@
+/vendor/
+/node_modules/
+/.phpcs.cache
+/composer.lock
+*.log
+.DS_Store
+Thumbs.db
