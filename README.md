@@ -88,3 +88,8 @@ GPL v2 or later. See [LICENSE](LICENSE).
 ## Author
 
 Christopher Ross — [thisismyurl.com](https://thisismyurl.com/)
+
+
+---
+*This project follows the [10 Core Pillars](PILLARS.md). Support quality work [here](https://github.com/sponsors/thisismyurl).*
+
