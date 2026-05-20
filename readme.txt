@@ -12,6 +12,8 @@ Detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your
 
 == Description ==
 
+ARCHIVED: This plugin is no longer actively maintained. It is provided as-is for legacy installs, and active support/testing is not guaranteed.
+
 I shipped the first version of this plugin in 2009 to hide a visible smiley character that WordPress.com Stats injected into the footer of every page. Automattic retired the smiley around 2012, so the original CSS-hiding trick stopped being useful a long time ago.
 
 Jetpack Stats today still injects a tracking pixel into your footer — through the legacy `stats_footer` global function on pre-11.5 stacks, and through `Automattic\Jetpack\Stats\Tracking_Pixel::add_amp_pixel` on Jetpack 11.5+ (AMP and Web Stories renders). Same shape of problem, different decade. I rewrote the plugin to do for Jetpack Stats what the original did for WP.com Stats: detach the footer artifact and leave the rest of your site alone.
