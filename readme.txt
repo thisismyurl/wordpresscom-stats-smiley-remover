@@ -60,6 +60,9 @@ If you don't want any of Jetpack Stats, that's the cleaner answer. This plugin i
 
 == Changelog ==
 
+= 16.6148 =
+* Added a `.distignore` so development and build scaffolding (composer.json, phpcs.xml.dist, .editorconfig, .github) no longer ships in the WordPress.org release zip.
+
 = 16.6147 =
 * Unified plugin versioning to the x.Yddd calendar-version scheme.
 * Confirmed compatibility with WordPress 7.0.
