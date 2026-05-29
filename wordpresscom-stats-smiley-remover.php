@@ -3,7 +3,7 @@
  * Plugin Name:       WordPress.com Stats Smiley Remover
  * Plugin URI:        https://thisismyurl.com/plugins/wordpresscom-stats-smiley-remover/
  * Description:       Detaches the WordPress.com Stats / Jetpack Stats footer tracking pixel from your site output.
- * Version:           16.6147
+ * Version:           16.6148.2110
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            Christopher Ross

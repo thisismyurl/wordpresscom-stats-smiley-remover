@@ -1,0 +1,28 @@
+# Files and directories excluded from the WordPress.org SVN deploy.
+# Mirrors what 10up/action-wordpress-plugin-deploy reads.
+
+.git
+.github
+.gitignore
+.gitattributes
+.distignore
+.editorconfig
+node_modules
+vendor
+tests
+phpcs.xml
+phpcs.xml.dist
+phpunit.xml
+phpunit.xml.dist
+composer.json
+composer.lock
+package.json
+package-lock.json
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+PILLARS.md
+.DS_Store
+Thumbs.db
+*.log

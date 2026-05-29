@@ -4,7 +4,7 @@ Tags: jetpack, stats, tracking, pixel, privacy
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 16.6147
+Stable tag: 16.6148.2110
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,9 @@ Yes. The plugin checks for the modern `Tracking_Pixel` class before touching it,
 If you don't want any of Jetpack Stats, that's the cleaner answer. This plugin is for sites that want the server-side reporting Jetpack Stats provides without the footer pixel sitting in their rendered HTML. Two different use cases.
 
 == Changelog ==
+
+= 16.6148 =
+* Added a `.distignore` so development and build scaffolding (composer.json, phpcs.xml.dist, .editorconfig, .github) no longer ships in the WordPress.org release zip.
 
 = 16.6147 =
 * Unified plugin versioning to the x.Yddd calendar-version scheme.
