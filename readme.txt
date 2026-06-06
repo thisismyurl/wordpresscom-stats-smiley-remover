@@ -32,7 +32,7 @@ Originally published 2009, rewritten 2026 for current WordPress and current Jetp
 
 = About the author =
 
-Built and maintained by Christopher Ross — 25 years working with WordPress, currently running a senior-dev consulting practice at This Is My URL. More plugins, writing, and case studies at [thisismyurl.com](https://thisismyurl.com/).
+Built and maintained by Christopher Ross — 25 years working with WordPress, currently running a senior-dev consulting practice at Christopher Ross. More plugins, writing, and case studies at [thisismyurl.com](https://thisismyurl.com/).
 
 == Installation ==
 
