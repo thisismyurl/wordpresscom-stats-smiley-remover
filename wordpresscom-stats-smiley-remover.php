@@ -21,7 +21,7 @@ namespace ThisIsMyURL\WPSmileyRemover;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '16.6147';
+const VERSION = '16.6148.2110';
 
 /**
  * Detach the WordPress.com Stats / Jetpack Stats footer pixel.
